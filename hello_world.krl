@@ -6,7 +6,7 @@ A first ruleset for the Quickstart
 >>
     author "Phil Windley"
     logging on
-    shares hello, __Testing
+    shares hello, __testing
   }
    
   global {
@@ -16,7 +16,9 @@ A first ruleset for the Quickstart
     }
     __testing = { "queries": [ { "name": "hello", "args": [ "obj" ] },
                            { "name": "__testing" } ],
-              "events": [ { "domain": "echo", "type": "hello" } ]
+              "events": [ { "domain": "echo", "type": "monkey",
+                            "attrs": [ "name" ] },
+                            { "domain": "echo", "type": "hello" } ]
             }
   }
    
