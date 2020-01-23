@@ -1,7 +1,7 @@
 ruleset use_twilio {
   meta {
     use module cs462_keys
-    use module use_twilio alias twilio
+    use module twilio_lab alias twilio
         with account_sid = keys:twilio{"account_sid"}
              auth_token =  keys:twilio{"auth_token"}
   }
