@@ -10,21 +10,49 @@ ruleset use_twilio {
   }
   
   global{
-    __testing = { "queries": [ ],
-              "events": [ { "domain": "test", "type": "send_test_message" } ]
+    __testing = { "queries": [],
+              "events": [ {"domain": "get", "type": "messages"},
+                { "domain": "get", "type": "messages",
+                            "attrs": [ "to", "from", "size", "offset" ] },
+                { "domain": "test", "type": "send_test_message" },
+                { "domain": "test", "type": "new_message",
+                            "attrs": [ "to", "from", "body" ] }
+               ]
             }
   }
 
   rule test_send_sms {
     select when test new_message
+    every{
       twilio:send_sms(event:attr("to"),
                       event:attr("from"),
                       event:attr("body")
-                      )
+                      ) setting (response);
+
+      send_directive("response", {"response": response})
+    }
+  }
+  
+  rule get_sms {
+    select when get messages
+    pre {
+      messages = twilio:get_messages(
+        to = event:attr("to") => event:attr("to") | null,
+        from = event:attr("from") => event:attr("from") | null,
+        size = event:attr("size") => event:attr("size") | 50,
+        offset = event:attr("offset") => event:attr("offset") | null
+      )
+    }
+
+    send_directive("messages", {"messages": messages})
   }
   
   rule another_test_sms {
     select when test send_test_message
-      twilio:send_sms("+19199739210", "+12052559063", "\"This is a test message. F\"")
+    every{
+      twilio:send_sms("+19199739210", "+12052559063", "\"This is a test message. F\"") setting (response);
+
+      send_directive("response", {"response": response})
+    }
   }
 }
