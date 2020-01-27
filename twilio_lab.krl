@@ -3,29 +3,37 @@ ruleset twilio_lab {
     configure using account_sid = ""
                     auth_token = ""
     provides
-        send_sms
+        send_sms, get_messages
         
-    shares __testing
   }
  
   global {
+    base_url = <<https://#{account_sid}:#{auth_token}@api.twilio.com/2010-04-01/Accounts/#{account_sid}/>>
+    
     send_sms = defaction(to, from, body) {
-       base_url = <<https://#{account_sid}:#{auth_token}@api.twilio.com/2010-04-01/Accounts/#{account_sid}/>>
-       http:post(base_url + "Messages.json", form = {
+      every{
+          http:post(base_url + "Messages.json", form = {
                 "Body" : body,
                 "From" : from,
                 "To" : to
-            }, autoraise = "sms_test_post")
-            
+            }) setting(response);
+      }
+      returns {
+        "response" : response{"content"}.decode()
+      }
+
     }
-    __testing = { "queries": [ ],
-              "events": [ { "domain": "test", "type": "new_message",
-                            "attrs": [ "to", "from", "body" ] } ]
-            }
-  }
-  
-  rule post_result{
-    select when http post label re#sms_test_post#
-    send_directive("Page says...", {"content":event:attr("content")});
+    
+    get_messages = function(to, from, offset, size){
+      messages = http:get(base_url + "Messages.json?", qs = {
+        "PageSize": size.defaultsTo(50),
+        "Page": offset.defaultsTo(0),
+        "To": to,
+        "From": from
+      });
+
+      messages{"content"}.decode()
+    }
+    
   }
 }
