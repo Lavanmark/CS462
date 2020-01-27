@@ -14,7 +14,7 @@ ruleset use_twilio {
               "events": [ {"domain": "get", "type": "messages"},
                 { "domain": "get", "type": "messages",
                             "attrs": [ "to", "from", "size", "offset" ] },
-                { "domain": "test", "type": "send_test_message" },
+                { "domain": "test", "type": "new_message" },
                 { "domain": "test", "type": "new_message",
                             "attrs": [ "to", "from", "body" ] }
                ]
@@ -24,9 +24,10 @@ ruleset use_twilio {
   rule test_send_sms {
     select when test new_message
     every{
-      twilio:send_sms(event:attr("to"),
-                      event:attr("from"),
-                      event:attr("body")
+      twilio:send_sms(
+            to = event:attr("to") => event:attr("to") | "+19199739210",
+            from = event:attr("from") => event:attr("from") | "+12052559063",
+            body = event:attr("body") => event:attr("body") | "\"This is a test message. F\""
                       ) setting (response);
 
       send_directive("response", {"response": response})
@@ -45,14 +46,5 @@ ruleset use_twilio {
     }
 
     send_directive("messages", {"messages": messages})
-  }
-  
-  rule another_test_sms {
-    select when test send_test_message
-    every{
-      twilio:send_sms("+19199739210", "+12052559063", "\"This is a test message. F\"") setting (response);
-
-      send_directive("response", {"response": response})
-    }
   }
 }
