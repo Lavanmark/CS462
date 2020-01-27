@@ -12,9 +12,9 @@ ruleset twilio_lab {
     send_sms = defaction(to, from, body) {
        base_url = <<https://#{account_sid}:#{auth_token}@api.twilio.com/2010-04-01/Accounts/#{account_sid}/>>
        http:post(base_url + "Messages.json", form = {
-                "body":body,
-                "from":from,
-                "to":to
+                "Body" : body,
+                "From" : from,
+                "To" : to
             }, autoraise = "sms_test_post")
             
     }
