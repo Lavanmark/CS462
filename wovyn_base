@@ -1,18 +1,13 @@
 ruleset wovyn_base {
   meta {
-    // use module cs462_keys
-    // use module twilio_lab alias twilio
-    //   with account_sid = keys:twilio{"account_sid"}
-    //   auth_token = keys:twilio{"auth_token"}
-    
-    shares __testing
+    use module cs462_keys
+    use module twilio_lab alias twilio
+       with account_sid = keys:twilio{"account_sid"}
+       auth_token = keys:twilio{"auth_token"}
   }
   global {
     alert_phone_number = "+19199739210"
-    temperature_threshold = 60.0
-    __testing = { "queries": [ { "name": "__testing" } ],
-                  "events": [ { "domain": "post", "type": "test",
-                              "attrs": [ "temp", "baro" ] } ] }
+    temperature_threshold = 60.0 //this is in fahrenheit
   }
   
   rule process_heartbeat {
@@ -22,11 +17,11 @@ ruleset wovyn_base {
       temperature = event:attr("genericThing"){"data"}{"temperature"}.klog("temp details")
       timestamp = event:attr("time").klog("timestamp details")
     }
-      send_directive("heartbeat", {"details":details})
-      always{
-        raise wovyn event "new_temperature_reading"
-          attributes { "temperature": temperature[0], "timestamp": timestamp }
-      }
+    noop()
+    always{
+      raise wovyn event "new_temperature_reading"
+        attributes { "temperature": temperature[0], "timestamp": timestamp }
+    }
   }
   
   rule find_high_temps {
@@ -35,17 +30,26 @@ ruleset wovyn_base {
       details = event:attrs().klog("temp attr ")
       tempF = event:attr("temperature"){"temperatureF"}.klog("Temp F = ")
     }
-    if tempF > temperature_threshold then
-      send_directive("find_high_temps", {"threshold_violation": "YES"})
-    fired{
+    send_directive("find_high_temps", {"threshold_violation": ((tempF > temperature_threshold) => "YES" | "NO")})
+    always{
       raise wovyn event "threshold_violation"
-        attributes {"temperature":tempF}
+        attributes event:attrs
+          if (tempF > temperature_threshold)
     }
   }
   
   rule threshold_notification {
     select when wovyn threshold_violation
-    send_directive("threshold_notification", {"message":"We will notify of violation"})
+    pre{
+      tempF = event:attr("temperature"){"temperatureF"}
+    }
+    every{
+      twilio:def_sender(
+            to = alert_phone_number,
+            body = ("The temperature (" + tempF + ") was in violation of your threshold of: "+temperature_threshold+". <3 KRL")
+                      ) setting (response);
+      send_directive("response", {"response": response})
+    }
   }
   
 }
