@@ -15,13 +15,13 @@ ruleset wovyn_base {
     select when wovyn heartbeat where event:attr("genericThing")
     pre {
       details = event:attrs().klog("attrs")
-      temperature = event:attr("genericThing"){"data"}{"temperature"}.klog("temp details")
+      temperature_data = event:attr("genericThing"){"data"}{"temperature"}.klog("temp details")
       timestamp = time:now()
     }
-    noop()
+    send_directive("process_heartbeat", {"genericThing": "Heartbeat Received."})
     always{
       raise wovyn event "new_temperature_reading"
-        attributes { "temperature": temperature[0], "timestamp": timestamp }
+        attributes { "temperature": temperature_data[0], "timestamp": timestamp }
     }
   }
   
@@ -46,11 +46,13 @@ ruleset wovyn_base {
       time = event:attr("timestamp")
     }
     every{
-      twilio:def_sender(
+      twilio:default_sender(
             to = alert_phone_number,
-            body = ("The temperature reading (" + tempF + ") at " + time + " was in violation of your threshold of: "+temperature_threshold+". <3 KRL")
+            body = ("The temperature reading (" + tempF + ") at " + time 
+                  + " was in violation of your threshold of: " 
+                  + temperature_threshold + ". <3 KRL")
                       ) setting (response);
-      send_directive("response", {"response": response})
+      send_directive("twilio_response", {"response": response})
     }
   }
 }
