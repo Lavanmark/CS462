@@ -3,7 +3,7 @@ ruleset twilio_lab {
     configure using account_sid = ""
                     auth_token = ""
     provides
-        send_sms, get_messages
+        send_sms, default_sender, get_messages
         
   }
  
@@ -21,7 +21,13 @@ ruleset twilio_lab {
       returns {
         "response" : response{"content"}.decode()
       }
-
+    }
+    
+    default_sender = defaction(to, body){
+      every{
+        send_sms(to,"+12052559063",body) setting (response)
+      }
+      returns response{"response"}
     }
     
     get_messages = function(to, from, offset, size){
