@@ -5,9 +5,10 @@ ruleset wovyn_base {
        with account_sid = keys:twilio{"account_sid"}
        auth_token = keys:twilio{"auth_token"}
   }
+  
   global {
     alert_phone_number = "+19199739210"
-    temperature_threshold = 60.0 //this is in fahrenheit
+    temperature_threshold = 70.0 //this is in fahrenheit
   }
   
   rule process_heartbeat {
@@ -15,7 +16,7 @@ ruleset wovyn_base {
     pre {
       details = event:attrs().klog("attrs")
       temperature = event:attr("genericThing"){"data"}{"temperature"}.klog("temp details")
-      timestamp = event:attr("time").klog("timestamp details")
+      timestamp = time:now()
     }
     noop()
     always{
@@ -42,14 +43,14 @@ ruleset wovyn_base {
     select when wovyn threshold_violation
     pre{
       tempF = event:attr("temperature"){"temperatureF"}
+      time = event:attr("timestamp")
     }
     every{
       twilio:def_sender(
             to = alert_phone_number,
-            body = ("The temperature (" + tempF + ") was in violation of your threshold of: "+temperature_threshold+". <3 KRL")
+            body = ("The temperature reading (" + tempF + ") at " + time + " was in violation of your threshold of: "+temperature_threshold+". <3 KRL")
                       ) setting (response);
       send_directive("response", {"response": response})
     }
   }
-  
 }
