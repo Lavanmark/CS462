@@ -5,22 +5,19 @@ ruleset wovyn_base {
        with account_sid = keys:twilio{"account_sid"}
        auth_token = keys:twilio{"auth_token"}
        
-    shares __testing
+    shares __testing, get_temperature_threshold
   }
   
   global {
     alert_phone_number = "+19199739210"
-    //ent:temperature_threshold = 70.0
 
     __testing = { "queries":
-      [] , 
+      [{"name": "get_temperature_threshold"}] , 
       "events":
-        [ 
-          { "domain": "wovyn", "type": "adjust_threshold", "attrs": [ "new_threshold" ] }
-        ]
+        [ { "domain": "wovyn", "type": "adjust_threshold", "attrs": [ "new_threshold" ] }]
     }
     
-    trial = function(){
+    get_temperature_threshold = function(){
       ent:temperature_threshold
     }
   }
