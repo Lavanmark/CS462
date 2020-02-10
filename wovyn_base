@@ -4,11 +4,25 @@ ruleset wovyn_base {
     use module twilio_lab alias twilio
        with account_sid = keys:twilio{"account_sid"}
        auth_token = keys:twilio{"auth_token"}
+       
+    shares __testing
   }
   
   global {
     alert_phone_number = "+19199739210"
-    temperature_threshold = 70.0 //this is in fahrenheit
+    //ent:temperature_threshold = 70.0
+
+    __testing = { "queries":
+      [] , 
+      "events":
+        [ 
+          { "domain": "wovyn", "type": "adjust_threshold", "attrs": [ "new_threshold" ] }
+        ]
+    }
+    
+    trial = function(){
+      ent:temperature_threshold
+    }
   }
   
   rule process_heartbeat {
@@ -31,11 +45,11 @@ ruleset wovyn_base {
       details = event:attrs().klog("temp attr ")
       tempF = event:attr("temperature"){"temperatureF"}.klog("Temp F = ")
     }
-    send_directive("find_high_temps", {"threshold_violation": ((tempF > temperature_threshold) => "YES" | "NO")})
+    send_directive("find_high_temps", {"threshold_violation": ((tempF > ent:temperature_threshold) => "YES" | "NO")})
     always{
       raise wovyn event "threshold_violation"
         attributes event:attrs
-          if (tempF > temperature_threshold)
+          if (tempF > ent:temperature_threshold)
     }
   }
   
@@ -50,9 +64,21 @@ ruleset wovyn_base {
             to = alert_phone_number,
             body = ("The temperature reading (" + tempF + ") at " + time 
                   + " was in violation of your threshold of: " 
-                  + temperature_threshold + ". <3 KRL")
+                  + ent:temperature_threshold + ". <3 KRL")
                       ) setting (response);
       send_directive("twilio_response", {"response": response})
     }
   }
+  
+  rule adjust_threshold {
+    select when wovyn adjust_threshold
+    pre{
+      new_threshold = event:attr("new_threshold")
+    }
+    send_directive("adjust_threshold", {"Adjusted threshold to" : new_threshold})
+    always{
+      ent:temperature_threshold := new_threshold
+    }
+  }
+  
 }
