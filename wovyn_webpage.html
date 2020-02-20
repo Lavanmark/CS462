@@ -1,34 +1,57 @@
 <!doctype html>
 <html>
+
 <head>
-  <title>Timing</title>
-  <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
-  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular.min.js"></script>
-  <script src="timing.js"></script>
+  <title>Wovyn Temperature Info</title>
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+  <script src="wovyn_page_script.js"></script>
   <style type="text/css">
-    span.finished { cursor: pointer; color: blue; text-decoration: underline; }
+    span.finished {
+      cursor: pointer;
+      color: blue;
+      text-decoration: underline;
+    }
   </style>
 </head>
-<body ng-app="timing" ng-controller="MainCtrl">
-<div class="row">
-<div class="col-md-8 col-md-offset-2">
-<div class="page-header">
-  <h1>Timing</h1>
-</div>
-  <form ng-submit="addTiming()" style = "margin-top:30px;">
-    <input type="text" ng-model="number" placeholder="number" autofocus></input>
-    <input type="text" ng-model="name" placeholder="name"></input>
-    <button type="submit" focus-input>timing started</button>
-  </form>
-  <div ng-repeat="timing in timings | orderBy: '-ordinal'">
-    {{timing.number}} &middot;
-    {{timing.name}} &middot;
-    {{timing.time_out}} &middot;
-    {{timing.time_in}}
-    <span class="finished" ng-click="finished(timing.number)" ng-if="!timing.time_in">timing finished</span>
-    <span ng-if="!!timing.time_in">&middot; {{timeDiff(timing)}}</span>
+
+<body ng-app="wovyn_page_script" ng-controller="MainCtrl">
+  <div>
+    <form ng-submit="runAll()" style="margin-top:30px;">
+      <label for="eci">ECI: </label> <input type="text" ng-model="eci" placeholder="eci"></input><br />
+      <button type="submit">Set ECI</button>
+    </form>
   </div>
-</div>
-</div>
+  <div data-ng-init="runAll()">
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2">
+        <div class="page-header">
+          <h1>Current Temperature at {{location}}: {{currentTemperature}}</h1>
+        </div>
+        <h3>Profile:</h3>
+        <div class="profile">
+          <form ng-submit="updateProfile()" style="margin-top:30px;">
+            <label for="name">Name: </label> <input type="text" ng-model="name" placeholder="name"></input><br />
+            <label for="phone">Phone: </label> <input type="text" ng-model="phone"
+              placeholder="phone number"></input><br />
+            <label for="location">Location: </label> <input type="text" ng-model="location"
+              placeholder="location"></input><br />
+            <label for="temperatureThreshold">Threshold: </label> <input type="text" ng-model="temperatureThreshold"
+              placeholder="threshold"></input><br />
+            <button type="submit">Update Profile</button>
+          </form>
+        </div>
+        <h2>All Temperature History:</h2>
+        <div ng-repeat="(timestamp, temperature) in temperatures">
+          {{timestamp}} &rarr; {{temperature}}
+        </div>
+        <h2>Threshold Violations:</h2>
+        <div ng-repeat="(timestamp, temperature) in thresholdViolations">
+          {{timestamp}} &rarr; {{temperature}}
+        </div>
+      </div>
+    </div>
+    </divdata-ng-init="onloadFun()">
 </body>
+
 </html>
