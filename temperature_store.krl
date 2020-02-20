@@ -1,23 +1,28 @@
 ruleset temperature_store {
   meta {
-    provides temperatures, threshold_violations, inrange_temperatures
-    shares temperatures, threshold_violations, inrange_temperatures
+    provides temperatures, threshold_violations, inrange_temperatures, current_temperature
+    shares temperatures, threshold_violations, inrange_temperatures, current_temperature
   }
   global {
     
     clear_temp = {}
     clear_violation = {}
+    clear_latest_temp = -400
     
     temperatures = function(){
-      return ent:temperature_map
+      return ent:temperature_map.defaultsTo(clear_temp)
     }
     
     threshold_violations = function(){
-      return ent:violation_map
+      return ent:violation_map.defaultsTo(clear_violation)
     }
     
     inrange_temperatures = function(){
-      return ent:temperature_map.filter(function(v,k){(ent:violation_map >< k) == false})
+      return ent:temperature_map.filter(function(v,k){(ent:violation_map >< k) == false}).defaultsTo(clear_temp)
+    }
+    
+    current_temperature = function(){
+      return ent:latest_temp.defaultsTo(clear_latest_temp)
     }
   }
   
@@ -32,6 +37,7 @@ ruleset temperature_store {
     send_directive("collect_temperatures", {"Logging temperature reading": tempF, "Time":time})
     always{
       ent:temperature_map{time}:=tempF
+      ent:latest_temp := tempF
     }
   }
   
@@ -53,6 +59,7 @@ ruleset temperature_store {
     always{
       ent:temperature_map := clear_temp
       ent:violation_map := clear_violation
+      ent:latest_temp := clear_latest_temp
     }
   }
 }
