@@ -5,21 +5,11 @@ ruleset wovyn_base {
        with account_sid = keys:twilio{"account_sid"}
        auth_token = keys:twilio{"auth_token"}
        
-    shares __testing, get_temperature_threshold
+    use module sensor_profile alias prof
   }
   
   global {
-    alert_phone_number = "+19199739210"
-
-    __testing = { "queries":
-      [{"name": "get_temperature_threshold"}] , 
-      "events":
-        [ { "domain": "wovyn", "type": "adjust_threshold", "attrs": [ "new_threshold" ] }]
-    }
     
-    get_temperature_threshold = function(){
-      ent:temperature_threshold
-    }
   }
   
   rule process_heartbeat {
@@ -42,11 +32,11 @@ ruleset wovyn_base {
       details = event:attrs().klog("temp attr ")
       tempF = event:attr("temperature"){"temperatureF"}.klog("Temp F = ")
     }
-    send_directive("find_high_temps", {"threshold_violation": ((tempF > ent:temperature_threshold) => "YES" | "NO")})
+    send_directive("find_high_temps", {"threshold_violation": ((tempF > prof:get_threshold()) => "YES" | "NO")})
     always{
       raise wovyn event "threshold_violation"
         attributes event:attrs
-          if (tempF > ent:temperature_threshold)
+          if (tempF > prof:get_threshold())
     }
   }
   
@@ -58,23 +48,12 @@ ruleset wovyn_base {
     }
     every{
       twilio:default_sender(
-            to = alert_phone_number,
+            to = prof:get_phone_number(),
             body = ("The temperature reading (" + tempF + ") at " + time 
                   + " was in violation of your threshold of: " 
-                  + ent:temperature_threshold + ". <3 KRL")
+                  + prof:get_threshold() + ". <3 KRL")
                       ) setting (response);
       send_directive("twilio_response", {"response": response})
-    }
-  }
-  
-  rule adjust_threshold {
-    select when wovyn adjust_threshold
-    pre{
-      new_threshold = event:attr("new_threshold")
-    }
-    send_directive("adjust_threshold", {"Adjusted threshold to" : new_threshold})
-    always{
-      ent:temperature_threshold := new_threshold
     }
   }
   
