@@ -1,7 +1,7 @@
 ruleset sensor_profile {
   meta {
-    provides get_phone_number, get_threshold, get_profile
-    shares __testing, get_phone_number, get_threshold, get_profile
+    provides get_phone_number, get_threshold, get_profile, get_name
+    shares __testing, get_phone_number, get_threshold, get_profile, get_name
   }
   
   global {
@@ -19,6 +19,10 @@ ruleset sensor_profile {
     
     get_threshold = function(){
       ent:profile_threshold.defaultsTo(75)
+    }
+    
+    get_name = function(){
+      ent:profile_name.defaultsTo("NO_NAME")
     }
     
     get_profile = function(){
