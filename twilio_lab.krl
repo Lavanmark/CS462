@@ -4,7 +4,7 @@ ruleset twilio_lab {
                     auth_token = ""
     provides
         send_sms, default_sender, get_messages
-        
+    shares default_sender
   }
  
   global {
